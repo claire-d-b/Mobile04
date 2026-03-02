@@ -14,7 +14,6 @@ import useGoogleAuth from "./auth_google";
 import useGithubAuth from "./auth_github";
 import CTextInput from "./CTextInput";
 import CButton from "./CButton";
-import * as Crypto from "expo-crypto";
 
 interface information {
   login: string;

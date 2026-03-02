@@ -8,8 +8,13 @@ npm run reset-project
 echo "export ANDROID_HOME=$HOME/Library/Android/sdk" >> ~/.zshrc
 echo "export PATH=$PATH:$ANDROID_HOME/emulator" >> ~/.zshrc
 echo "export PATH=$PATH:$ANDROID_HOME/platform-tools" >> ~/.zshrc
+echo 'export PATH="/opt/homebrew/opt/postgresql@18/bin:$PATH"' >> ~/.zshrc
+# brew services start postgresql@18
 
 source $HOME/.zshrc
+
+# Add these lines at the very top of start.sh (after the shebang)
+#!/bin/zsh
 
 # When you start a development server with npx expo start on the start developing page, press a to open the Android Emulator. Expo CLI will install Expo Go automatically.
 # Open up the Mac App Store, search for Xcode, and click Install (or Update if you have it already).
@@ -69,10 +74,15 @@ else
   sed -i 's/import { Stack } from "expo-router";/import { Stack } from "expo-router";\nimport "..\/global.css";/' app/_layout.tsx
 fi
 
+# if [ "$(uname)" = "Darwin" ]; then
+#     sed -i '' 's/"web": {/"web": {\n      "bundler": "metro",/' app.json
+# else
+#     sed -i 's/"web": {/"web": {\n      "bundler": "metro",/' app.json
+# fi
 if [ "$(uname)" = "Darwin" ]; then
-    sed -i '' 's/"web": {/"web": {\n      "bundler": "metro",/' app.json
+      sed -i '' 's/"android": {\n/"android": {\n"usesCleartextTraffic": true,\n'/g app.json
 else
-    sed -i 's/"web": {/"web": {\n      "bundler": "metro",/' app.json
+      sed -i 's/"android": {\n/"android": {\n"usesCleartextTraffic": true,\n'/g app.json
 fi
 
 touch nativewind-env.d.ts && echo "/// <reference types="nativewind/types" />" > nativewind-env.d.ts
@@ -114,12 +124,18 @@ npx expo install expo-auth-session expo-web-browser
 
 brew install postgresql
 
-echo "CREATE DATABASE diary_app" | psql postgres
+# Verify
+psql --version
 
-mkdir backend
+echo "CREATE DATABASE diary_app" | psql postgres
+echo "CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, login TEXT UNIQUE NOT NULL, password TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW());" | psql diary_app
+
+mkdir -p backend
 cd backend
 npm init -y
 npm install express pg cors dotenv
+cd backend
+node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json'));p.type='module';fs.writeFileSync('package.json',JSON.stringify(p,null,2))"
 
 cat << 'EOF' > server.js
 import express from "express";
@@ -136,10 +152,10 @@ app.use(express.json());
 const { Pool } = pg;
 
 const pool = new Pool({
-  user: "postgres",
+  user: "claire",
   host: "localhost",
-  database: "myapp",
-  password: "YOUR_PASSWORD",
+  database: "diary_app",
+  password: "",
   port: 5432,
 });
 
@@ -164,7 +180,7 @@ app.listen(3000, () => {
 });
 EOF
 
-echo "CREATE TABLE users (id SERIAL PRIMARY KEY, login TEXT UNIQUE NOT NULL, password TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW())" | psql postgres
+echo "CREATE TABLE users (id SERIAL PRIMARY KEY, login TEXT UNIQUE NOT NULL, password TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW())" | psql claire
 
 cat << 'EOF' > server.js
 import express from "express";
@@ -182,10 +198,10 @@ app.use(express.json());
 const { Pool } = pg;
 
 const pool = new Pool({
-  user: process.env.DB_USER || "postgres",
+  user: process.env.DB_USER || "claire",
   host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "myapp",
-  password: process.env.DB_PASSWORD || "YOUR_PASSWORD",
+  database: process.env.DB_NAME || "diary_app",
+  password: process.env.DB_PASSWORD || "",
   port: Number(process.env.DB_PORT) || 5432,
 });
 

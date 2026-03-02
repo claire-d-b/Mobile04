@@ -13,10 +13,10 @@ app.use(express.json());
 const { Pool } = pg;
 
 const pool = new Pool({
-  user: process.env.DB_USER || "postgres",
+  user: process.env.DB_USER || "claire",
   host: process.env.DB_HOST || "localhost",
-  database: process.env.DB_NAME || "myapp",
-  password: process.env.DB_PASSWORD || "YOUR_PASSWORD",
+  database: process.env.DB_NAME || "diary_app",
+  password: process.env.DB_PASSWORD || "",
   port: Number(process.env.DB_PORT) || 5432,
 });
 

@@ -56,8 +56,7 @@ const Register = () => {
             body: JSON.stringify({ login, password }),
           });
           const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
+          console.log("User created:", data);
         } else {
           const res = await fetch("http://localhost:3000/users/register", {
             method: "POST",
@@ -67,8 +66,7 @@ const Register = () => {
             body: JSON.stringify({ login, password }),
           });
           const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
+          console.log("User created:", data);
         }
       } else {
         console.error("Passwords do not match");

@@ -21,57 +21,48 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 interface information {
   login: string;
   password: string;
-  npassword: string;
 }
 
 type RootStackParamList = {
   Signin: undefined;
   Register: undefined;
+  Home: undefined;
 };
 
 type SigninScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "Register"
+  "Signin"
 >;
 
-const Register = () => {
+const SignIn = () => {
   const navigation = useNavigation<SigninScreenNavigationProp>();
   const [login, setLogin] = useState("");
   const [text, setText] = useState("");
   const [password, setPassword] = useState("");
-  const [npassword, setNPassword] = useState("");
-
   const [secure, setSecure] = useState(true);
-  const [nsecure, setNSecure] = useState(true);
 
-  const handleSubmit = async ({ login, password, npassword }: information) => {
+  const handleSubmit = async ({ login, password }: information) => {
     try {
-      if (password === npassword) {
-        if (Platform.OS === "android") {
-          const res = await fetch("http://10.0.2.2:3000/users/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ login, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
-        } else {
-          const res = await fetch("http://localhost:3000/users/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ login, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
-        }
+      if (Platform.OS === "android") {
+        const res = await fetch("http://10.0.2.2:3000/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ login, password }),
+        });
+        const data = await res.json();
+        console.log("Log-in successful:", data);
       } else {
-        console.error("Passwords do not match");
+        const res = await fetch("http://127.0.0.1:3000/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ login, password }),
+        });
+        const data = await res.json();
+        console.log("Log-in successful:", data);
       }
     } catch (error) {
       console.error("Error during registration:", error);
@@ -97,12 +88,12 @@ const Register = () => {
         <CTextInput
           secureTextEntry={false}
           right={<></>}
-          onBlur={() => setLogin(text)}
+          onBlur={() => {}}
           onChangeText={(text: string) => {
-            setText(text);
+            setLogin(text);
           }}
           label="login"
-          msg={text}
+          msg={login}
           placeholder="Type your login"
           variant="outlined"
           textColor="#534DB3"
@@ -124,8 +115,8 @@ const Register = () => {
             />
           }
           onBlur={() => {}}
-          onChangeText={(secret) => {
-            setPassword(secret);
+          onChangeText={(text: string) => {
+            setPassword(text);
           }}
           label="password"
           msg={password}
@@ -139,36 +130,10 @@ const Register = () => {
           activeUnderlineColor="#534DB3"
           selectionColor="#534DB3"
           contentStyle={{}}
-          style={{ width: "100%", borderRadius: 10 }}
-        />
-        <CTextInput
-          secureTextEntry={nsecure}
-          right={
-            <TextInput.Icon
-              icon={nsecure ? "eye-off" : "eye"}
-              onPress={() => setNSecure(!nsecure)}
-            />
-          }
-          onBlur={() => {}}
-          onChangeText={(nsecret) => {
-            setNPassword(nsecret);
-          }}
-          label="confirm password"
-          msg={npassword}
-          placeholder="confirm your password"
-          variant="outlined"
-          textColor="#534DB3"
-          outlineColor="#534DB3"
-          outlineStyle={{ borderRadius: 10 }}
-          activeOutlineColor="#534DB3"
-          underlineColor="#534DB3"
-          activeUnderlineColor="#534DB3"
-          selectionColor="#534DB3"
-          contentStyle={{}}
-          style={{ width: "100%", borderRadius: 10 }}
+          style={{ width: "100%" }}
         />
         <CButton
-          onClick={() => handleSubmit({ login, password, npassword })}
+          onClick={() => handleSubmit({ login, password })}
           msg="Send"
           variant="contained"
           textColor="white"
@@ -177,8 +142,8 @@ const Register = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => navigation.navigate("Signin")}
-          msg="Already registered ? Sign-in"
+          onClick={() => navigation.navigate("Register")}
+          msg="Not register yet ? Create an account"
           variant="text"
           textColor="#534DB3"
           style={{ display: "flex", alignSelf: "flex-end" }}
@@ -190,4 +155,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default SignIn;

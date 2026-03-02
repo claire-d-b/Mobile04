@@ -1,6 +1,6 @@
 import * as Location from "expo-location";
 import React, { useState, useEffect, use } from "react";
-import { View, ActivityIndicator, BlurEvent } from "react-native";
+import { View, ActivityIndicator, BlurEvent, Platform } from "react-native";
 import {
   Appbar,
   Text,
@@ -39,24 +39,33 @@ const SignIn = () => {
   const [login, setLogin] = useState("");
   const [text, setText] = useState("");
   const [password, setPassword] = useState("");
-  const [secret, setSecret] = useState("");
   const [secure, setSecure] = useState(true);
 
   const handleSubmit = async ({ login, password }: information) => {
     try {
-      const hashedPassword = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        password,
-      );
-      const res = await fetch("http://10.0.2.2:3000/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ login, password: hashedPassword }),
-      });
-      const data = await res.json();
-      console.log("Log-in successful:", data);
+      if (Platform.OS === "android") {
+        const res = await fetch("http://10.0.2.2:3000/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ login, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) console.error("Unknown user");
+        else console.log("Log-in successful:", data);
+      } else {
+        const res = await fetch("http://127.0.0.1:3000/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ login, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) console.error("Unknown user");
+        else console.log("Log-in successful:", data);
+      }
     } catch (error) {
       console.error("Error during registration:", error);
     }
@@ -81,16 +90,17 @@ const SignIn = () => {
         <CTextInput
           secureTextEntry={false}
           right={<></>}
-          onBlur={() => setLogin(text)}
+          onBlur={() => {}}
           onChangeText={(text: string) => {
-            setText(text);
+            setLogin(text);
           }}
           label="login"
-          msg={text}
+          msg={login}
           placeholder="Type your login"
           variant="outlined"
           textColor="#534DB3"
           outlineColor="#534DB3"
+          outlineStyle={{ borderRadius: 10 }}
           activeOutlineColor="#534DB3"
           underlineColor="#534DB3"
           activeUnderlineColor="#534DB3"
@@ -106,9 +116,9 @@ const SignIn = () => {
               onPress={() => setSecure(!secure)}
             />
           }
-          onBlur={() => setPassword(secret)}
+          onBlur={() => {}}
           onChangeText={(text: string) => {
-            setSecret(text);
+            setPassword(text);
           }}
           label="password"
           msg={password}
@@ -116,6 +126,7 @@ const SignIn = () => {
           variant="outlined"
           textColor="#534DB3"
           outlineColor="#534DB3"
+          outlineStyle={{ borderRadius: 10 }}
           activeOutlineColor="#534DB3"
           underlineColor="#534DB3"
           activeUnderlineColor="#534DB3"
