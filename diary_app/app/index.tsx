@@ -1,7 +1,7 @@
+// app/index.tsx
 import "../global.css";
-import { Text } from "react-native-paper";
-import CAppbar from "./CAppbar";
+import { Redirect } from "expo-router";
 
-export default function App() {
-  return <CAppbar />;
+export default function Index() {
+  return <Redirect href="/signin" />; // ← must be lowercase
 }

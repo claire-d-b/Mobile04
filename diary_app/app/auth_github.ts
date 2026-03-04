@@ -7,10 +7,10 @@ const discovery = {
   tokenEndpoint: "https://github.com/login/oauth/access_token",
 };
 
-const useGithubAuth = () => {
+const useGithubAuth = (onSuccess?: () => void) => {
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
-      clientId: "GITHUB_CLIENT_ID",
+      clientId: "Ov23liAJIdrWSEO9ibEh",
       scopes: ["read:user", "user:email"],
       redirectUri: AuthSession.makeRedirectUri({}),
       responseType: "code",
@@ -24,6 +24,7 @@ const useGithubAuth = () => {
 
       // 👉 Envoie le code à ton backend
       console.log("GitHub code:", code);
+      onSuccess?.(); // ← navigate on success
     }
   }, [response]);
 

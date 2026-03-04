@@ -17,6 +17,7 @@ import CButton from "./CButton";
 import * as Crypto from "expo-crypto";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { router } from "expo-router";
 
 interface information {
   login: string;
@@ -24,22 +25,28 @@ interface information {
 }
 
 type RootStackParamList = {
-  Signin: undefined;
-  Register: undefined;
-  Home: undefined;
+  signin: undefined;
+  register: undefined;
+  home: undefined;
 };
 
 type SigninScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  "Signin"
+  "signin"
 >;
 
 const SignIn = () => {
   const navigation = useNavigation<SigninScreenNavigationProp>();
   const [login, setLogin] = useState("");
-  const [text, setText] = useState("");
   const [password, setPassword] = useState("");
   const [secure, setSecure] = useState(true);
+
+  const { promptAsync: googlePrompt } = useGoogleAuth(() =>
+    router.push("/home"),
+  );
+  const { promptAsync: githubPrompt } = useGithubAuth(() =>
+    router.push("/home"),
+  );
 
   const handleSubmit = async ({ login, password }: information) => {
     try {
@@ -64,7 +71,10 @@ const SignIn = () => {
         });
         const data = await res.json();
         if (!res.ok) console.error("Unknown user");
-        else console.log("Log-in successful:", data);
+        else {
+          console.log("Log-in successful:", data);
+          router.push("/home");
+        }
       }
     } catch (error) {
       console.error("Error during registration:", error);
@@ -144,10 +154,28 @@ const SignIn = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => navigation.navigate("Register")}
-          msg="Not register yet ? Create an account"
+          onClick={() => router.push("/register")}
+          msg="Not registered yet ? Create an account"
           variant="text"
           textColor="#534DB3"
+          style={{ display: "flex", alignSelf: "flex-end" }}
+          buttonColor="transparent"
+          labelStyle={{}}
+        />
+        <CButton
+          onClick={() => googlePrompt()}
+          msg="Connect with Google"
+          variant="text"
+          textColor="gray"
+          style={{ display: "flex", alignSelf: "flex-end" }}
+          buttonColor="transparent"
+          labelStyle={{}}
+        />
+        <CButton
+          onClick={() => githubPrompt()}
+          msg="Connect with Github"
+          variant="text"
+          textColor="gray"
           style={{ display: "flex", alignSelf: "flex-end" }}
           buttonColor="transparent"
           labelStyle={{}}

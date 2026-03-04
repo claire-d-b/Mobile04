@@ -11,7 +11,7 @@ const discovery = {
   tokenEndpoint: "https://oauth2.googleapis.com/token",
 };
 
-const useGoogleAuth = () => {
+const useGoogleAuth = (onSuccess?: () => void) => {
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: "GOOGLE_CLIENT_ID",
@@ -28,6 +28,7 @@ const useGoogleAuth = () => {
 
       // 👉 Envoie le code à ton backend ici
       console.log("Authorization code:", code);
+      onSuccess?.(); // ← navigate on success
     }
   }, [response]);
 

@@ -17,6 +17,7 @@ import CButton from "./CButton";
 import * as Crypto from "expo-crypto";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { router } from "expo-router";
 
 interface information {
   login: string;
@@ -175,7 +176,7 @@ const Register = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => navigation.navigate("Signin")}
+          onClick={() => router.push("/signin")}
           msg="Already registered ? Sign-in"
           variant="text"
           textColor="#534DB3"
