@@ -267,5 +267,47 @@ npm install --save-dev @types/bcrypt
 npm install @react-navigation/native
 npm install @react-navigation/native-stack
 
+npx expo install expo-crypto
+npm install firebase
+npx expo install firebase
+npx expo install expo-dev-client
+
+rm /Users/claire/Workspace/mobile_04/diary_app/android/app/debug.keystore
+keytool -genkey -v \
+  -keystore /Users/claire/Workspace/mobile_04/diary_app/android/app/debug.keystore \
+  -alias androiddebugkey \
+  -keyalg RSA \
+  -keysize 2048 \
+  -validity 10000 \
+  -storepass android \
+  -keypass android \
+  -dname "CN=Android Debug,O=Android,C=FR"
+keytool -list -v \
+  -keystore /Users/claire/Workspace/mobile_04/diary_app/android/app/debug.keystore \
+  -alias androiddebugkey \
+  -storepass android
+
+npm install --global eas-cli && eas init --id ebcd0a5d-28a0-4970-ac83-ec5cc109c0b9
+npx expo install @react-native-google-signin/google-signin
+npm install firebase
+
+firebase login
+firebase init
+firebase deploy
+
+brew install firebase-cli
+npx firebase-tools login
+npx firebase-tools projects:list
+
+npx expo install @react-native-async-storage/async-storage
+
+npx expo run:android --device
+npx expo start --dev-client
+npx expo run:android
+npx expo run:ios
+
+cd android && ./gradlew signingReport
 npx expo start
+
+keytool -keystore android/app/debug.keystore -list -v # linux & ios
 # When you start a development server with npx expo start on the start developing page, press i to open the iOS Simulator. Expo CLI will install Expo Go automatically.

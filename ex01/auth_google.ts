@@ -1,37 +1,34 @@
+import { useState } from "react";
 import * as WebBrowser from "expo-web-browser";
-import * as AuthSession from "expo-auth-session";
+import * as Google from "expo-auth-session/providers/google";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { auth } from "../config/firebase";
 import { useEffect } from "react";
 
-WebBrowser.maybeCompleteAuthSession();
+// WebBrowser.maybeCompleteAuthSession();
 
-const redirectUri = AuthSession.makeRedirectUri({});
+export function useGoogleAuth() {
+  const [user, setUser] = useState(null);
 
-const discovery = {
-  authorizationEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
-  tokenEndpoint: "https://oauth2.googleapis.com/token",
-};
-
-const useGoogleAuth = () => {
-  const [request, response, promptAsync] = AuthSession.useAuthRequest(
-    {
-      clientId: "GOOGLE_CLIENT_ID",
-      scopes: ["openid", "profile", "email"],
-      redirectUri,
-      responseType: "code",
-    },
-    discovery,
-  );
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId:
+      "264287288047-pengrcigquvvtgv0864cgv7vs17tr5s8.apps.googleusercontent.com",
+  });
 
   useEffect(() => {
     if (response?.type === "success") {
-      const { code } = response.params;
+      const { id_token } = response.params; // ← id_token, pas accessToken
 
-      // 👉 Envoie le code à ton backend ici
-      console.log("Authorization code:", code);
+      const credential = GoogleAuthProvider.credential(id_token);
+
+      signInWithCredential(auth, credential)
+        .then((result) => {
+          setUser(result.user);
+          console.log("Connecté :", result.user.email);
+        })
+        .catch(console.error);
     }
   }, [response]);
 
-  return { promptAsync };
-};
-
-export default useGoogleAuth;
+  return { request, promptAsync, user };
+}

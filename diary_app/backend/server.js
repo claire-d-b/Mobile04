@@ -30,7 +30,7 @@ app.post("/users/register", async (req, res) => {
 
     const result = await pool.query(
       "INSERT INTO users(login, password) VALUES($1, $2) RETURNING id, login",
-      [login, hashedPassword]
+      [login, hashedPassword],
     );
 
     res.json(result.rows[0]);
@@ -45,10 +45,9 @@ app.post("/users/login", async (req, res) => {
   const { login, password } = req.body;
 
   try {
-    const result = await pool.query(
-      "SELECT * FROM users WHERE login = $1",
-      [login]
-    );
+    const result = await pool.query("SELECT * FROM users WHERE login = $1", [
+      login,
+    ]);
 
     if (result.rows.length === 0) {
       return res.status(400).json({ error: "User not found" });
@@ -71,4 +70,33 @@ app.post("/users/login", async (req, res) => {
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");
+});
+
+app.post("/auth/github", async (req, res) => {
+  const { code } = req.body;
+  console.log(process.env.GITHUB_CLIENT_SECRET);
+
+  console.log("📡 GitHub code reçu:", code); // ← ajoute ce log
+
+  const response = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json", // ✅ OBLIGATOIRE sinon GitHub renvoie du HTML
+    },
+    body: JSON.stringify({
+      client_id: "Ov23liMl9KamCid3JjRa",
+      client_secret: process.env.GITHUB_CLIENT_SECRET,
+      code,
+    }),
+  });
+
+  const data = await response.json();
+  console.log("✅ GitHub token response:", data); // ← ajoute ce log
+
+  if (data.error) {
+    return res.status(400).json({ error: data.error });
+  }
+
+  res.json({ access_token: data.access_token });
 });

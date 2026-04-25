@@ -41,12 +41,16 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [secure, setSecure] = useState(true);
 
-  const { promptAsync: googlePrompt } = useGoogleAuth(() =>
-    router.push("/home"),
-  );
-  const { promptAsync: githubPrompt } = useGithubAuth(() =>
-    router.push("/home"),
-  );
+  // const { promptAsync: googlePrompt } = useGoogleAuth(() => {
+  //   console.log("🏠 Callback Google → router.push /home");
+  //   router.push("/home");
+  // });
+  const { promptAsync: googlePrompt } = useGoogleAuth();
+  // const { promptAsync: githubPrompt } = useGithubAuth(() => {
+  //   console.log("🏠 Callback GitHub → router.push /home");
+  //   router.push("/home");
+  // });
+  const { promptAsync: githubPrompt } = useGithubAuth();
 
   const handleSubmit = async ({ login, password }: information) => {
     try {
@@ -60,7 +64,10 @@ const SignIn = () => {
         });
         const data = await res.json();
         if (!res.ok) console.error("Unknown user");
-        else console.log("Log-in successful:", data);
+        else {
+          console.log("Log-in successful:", data);
+          router.push("/home"); // ← même comportement sur Android et iOS
+        }
       } else {
         const res = await fetch("http://127.0.0.1:3000/users/login", {
           method: "POST",
