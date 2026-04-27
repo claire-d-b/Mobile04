@@ -1,5 +1,6 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 diary_app/backend/.env
+diaryapp/.env
 diary_app/GoogleService-Info.plist
 diary_app/config/firebase.ts
 diary_app/app/google-services.json

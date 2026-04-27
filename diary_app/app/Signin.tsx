@@ -1,116 +1,72 @@
-import * as Location from "expo-location";
-import React, { useState, useEffect, use } from "react";
-import { View, ActivityIndicator, BlurEvent, Platform } from "react-native";
-import {
-  Appbar,
-  Text,
-  IconButton,
-  Icon,
-  Menu,
-  TextInput,
-} from "react-native-paper";
-import { evaluate } from "mathjs";
+import React, { useState } from "react";
+import { View, Platform } from "react-native";
+import { TextInput } from "react-native-paper";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { router } from "expo-router";
+import auth from "../config/firebase";
 import useGoogleAuth from "./auth_google";
 import useGithubAuth from "./auth_github";
 import CTextInput from "./CTextInput";
 import CButton from "./CButton";
-import * as Crypto from "expo-crypto";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { router } from "expo-router";
 
-interface information {
+interface Information {
   login: string;
   password: string;
 }
 
-type RootStackParamList = {
-  signin: undefined;
-  register: undefined;
-  home: undefined;
-};
-
-type SigninScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "signin"
->;
+const backendUrl = Platform.OS === "android"
+  ? "http://10.0.2.2:3000"
+  : "http://localhost:3000";
 
 const SignIn = () => {
-  const navigation = useNavigation<SigninScreenNavigationProp>();
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [secure, setSecure] = useState(true);
+  const [error, setError] = useState("");
 
-  // const { promptAsync: googlePrompt } = useGoogleAuth(() => {
-  //   console.log("🏠 Callback Google → router.push /home");
-  //   router.push("/home");
-  // });
   const { promptAsync: googlePrompt } = useGoogleAuth();
-  // const { promptAsync: githubPrompt } = useGithubAuth(() => {
-  //   console.log("🏠 Callback GitHub → router.push /home");
-  //   router.push("/home");
-  // });
   const { promptAsync: githubPrompt } = useGithubAuth();
 
-  const handleSubmit = async ({ login, password }: information) => {
+  const handleSubmit = async ({ login, password }: Information) => {
+    setError("");
     try {
-      if (Platform.OS === "android") {
-        const res = await fetch("http://10.0.2.2:3000/users/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ login, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) console.error("Unknown user");
-        else {
-          console.log("Log-in successful:", data);
-          router.push("/home"); // ← même comportement sur Android et iOS
-        }
-      } else {
-        const res = await fetch("http://127.0.0.1:3000/users/login", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ login, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) console.error("Unknown user");
-        else {
-          console.log("Log-in successful:", data);
-          router.push("/home");
-        }
+      // 1. Appel backend
+      const res = await fetch(`${backendUrl}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed");
+        console.error("❌ Login failed:", data.error);
+        return;
       }
-    } catch (error) {
-      console.error("Error during registration:", error);
+
+      console.log("✅ Backend login success:", data.user);
+
+      // 2. Firebase Auth
+      await signInWithEmailAndPassword(auth, login, password);
+      console.log("✅ Firebase login success");
+
+      // 3. _layout.tsx détecte onAuthStateChanged → redirige vers /(tabs)
+
+    } catch (err) {
+      console.error("❌ Error during login:", err);
+      setError("An error occurred");
     }
   };
 
   return (
-    <View
-      style={{
-        width: "100%",
-        height: "100%",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <View
-        style={{
-          width: "100%",
-          padding: 10,
-        }}
-      >
+    <View style={{ width: "100%", height: "100%", flexDirection: "column",
+      alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: "100%", padding: 10 }}>
         <CTextInput
           secureTextEntry={false}
           right={<></>}
           onBlur={() => {}}
-          onChangeText={(text: string) => {
-            setLogin(text);
-          }}
+          onChangeText={(text: string) => setLogin(text)}
           label="login"
           msg={login}
           placeholder="Type your login"
@@ -134,9 +90,7 @@ const SignIn = () => {
             />
           }
           onBlur={() => {}}
-          onChangeText={(text: string) => {
-            setPassword(text);
-          }}
+          onChangeText={(text: string) => setPassword(text)}
           label="password"
           msg={password}
           placeholder="Type your password"
@@ -151,6 +105,17 @@ const SignIn = () => {
           contentStyle={{}}
           style={{ width: "100%" }}
         />
+        {error ? (
+          <CButton
+            msg={error}
+            variant="text"
+            textColor="red"
+            style={{}}
+            buttonColor="transparent"
+            labelStyle={{}}
+            onClick={() => {}}
+          />
+        ) : null}
         <CButton
           onClick={() => handleSubmit({ login, password })}
           msg="Send"

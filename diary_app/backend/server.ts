@@ -45,8 +45,10 @@ const initDB = async (): Promise<void> => {
         password VARCHAR(255),
         provider VARCHAR(50) DEFAULT 'local',
         provider_id VARCHAR(255),
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
+
       CREATE TABLE IF NOT EXISTS diary_entries (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -58,6 +60,14 @@ const initDB = async (): Promise<void> => {
         updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+    // Migrations — sécurisées si colonnes existent déjà
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS provider VARCHAR(50) DEFAULT 'local';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS provider_id VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+    `);
+
     console.log("✅ Tables ready");
   } catch (err) {
     console.error("❌ DB init failed:", err);
@@ -69,35 +79,63 @@ initDB().then(() => {
 });
 
 // REGISTER USER
-app.post("/users/register", async (req: Request<{}, {}, RegisterBody>, res: Response) => {
+app.post("/user/register", async (req: Request<{}, {}, RegisterBody>, res: Response) => {
   const { login, password } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
     const result = await pool.query(
-      "INSERT INTO users(login, password) VALUES($1, $2) RETURNING id, login",
+      `INSERT INTO users(login, password, provider)
+       VALUES($1, $2, 'local')
+       RETURNING id, login, provider, created_at`,
       [login, hashedPassword],
     );
-    res.json(result.rows[0]);
-  } catch (err) {
+    console.log("✅ User registered:", result.rows[0]);
+    res.json({ message: "Registration success", user: result.rows[0] });
+  } catch (err: any) {
     console.error(err);
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Login already exists" });
+    }
     res.status(500).json({ error: "Registration failed" });
   }
 });
 
 // LOGIN USER
-app.post("/users/login", async (req: Request<{}, {}, LoginBody>, res: Response) => {
+app.post("/user/login", async (req: Request<{}, {}, LoginBody>, res: Response) => {
   const { login, password } = req.body;
   try {
-    const result = await pool.query("SELECT * FROM users WHERE login = $1", [login]);
+    const result = await pool.query(
+      "SELECT * FROM users WHERE login = $1",
+      [login]
+    );
     if (result.rows.length === 0) {
       return res.status(400).json({ error: "User not found" });
     }
     const user = result.rows[0];
+
+    // Vérifie que c'est un compte local
+    if (user.provider !== "local") {
+      return res.status(400).json({
+        error: `Ce compte utilise ${user.provider}. Connecte-toi avec ${user.provider}.`
+      });
+    }
+
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       return res.status(400).json({ error: "Invalid password" });
     }
-    res.json({ message: "Login success", user: { id: user.id, login: user.login } });
+
+    // Met à jour last_login
+    await pool.query(
+      "UPDATE users SET updated_at = NOW() WHERE id = $1",
+      [user.id]
+    );
+
+    console.log("✅ User logged in:", user.login);
+    res.json({
+      message: "Login success",
+      user: { id: user.id, login: user.login, provider: user.provider }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Login failed" });
@@ -119,7 +157,6 @@ app.post("/auth/github", async (req: Request<{}, {}, GithubAuthBody>, res: Respo
       }),
     });
     const data = await response.json() as GithubTokenResponse;
-    console.log("✅ GitHub token response:", data);
     if (data.error) return res.status(400).json({ error: data.error });
 
     const profile = await fetch("https://api.github.com/user", {
@@ -127,13 +164,21 @@ app.post("/auth/github", async (req: Request<{}, {}, GithubAuthBody>, res: Respo
     }).then((r) => r.json()) as GithubProfile;
     console.log("✅ GitHub profile:", profile);
 
+    const login = profile.email || profile.login;
+
+    // Upsert — crée ou met à jour l'utilisateur
     const result = await pool.query(
-      `INSERT INTO users (login, provider, provider_id)
-       VALUES ($1, 'github', $2)
-       ON CONFLICT (login) DO UPDATE SET provider = 'github', provider_id = $2
-       RETURNING id, login`,
-      [profile.email || profile.login, String(profile.id)]
+      `INSERT INTO users (login, provider, provider_id, created_at)
+       VALUES ($1, 'github', $2, NOW())
+       ON CONFLICT (login) DO UPDATE
+       SET provider = 'github',
+           provider_id = $2,
+           updated_at = NOW()
+       RETURNING id, login, provider`,
+      [login, String(profile.id)]
     );
+
+    console.log("✅ GitHub user upserted:", result.rows[0]);
     res.json({ access_token: data.access_token, user: result.rows[0] });
   } catch (err) {
     console.error("❌ GitHub auth error:", err);
@@ -149,15 +194,22 @@ app.post("/auth/google", async (req: Request<{}, {}, GoogleAuthBody>, res: Respo
       headers: { Authorization: `Bearer ${token}` },
     }).then((r) => r.json()) as GoogleProfile;
     console.log("✅ Google profile:", profile);
+
     if (!profile.sub) return res.status(400).json({ error: "Invalid Google token" });
 
+    // Upsert — crée ou met à jour l'utilisateur
     const result = await pool.query(
-      `INSERT INTO users (login, provider, provider_id)
-       VALUES ($1, 'google', $2)
-       ON CONFLICT (login) DO UPDATE SET provider = 'google', provider_id = $2
-       RETURNING id, login`,
+      `INSERT INTO users (login, provider, provider_id, created_at)
+       VALUES ($1, 'google', $2, NOW())
+       ON CONFLICT (login) DO UPDATE
+       SET provider = 'google',
+           provider_id = $2,
+           updated_at = NOW()
+       RETURNING id, login, provider`,
       [profile.email, String(profile.sub)]
     );
+
+    console.log("✅ Google user upserted:", result.rows[0]);
     res.json({ user: result.rows[0] });
   } catch (err) {
     console.error("❌ Google auth error:", err);

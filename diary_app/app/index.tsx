@@ -1,7 +1,7 @@
 // app/index.tsx
 import "../global.css";
-import { Redirect } from "expo-router";
+import Signin from "./signin"
 
 export default function Index() {
-  return <Redirect href="/signin" />; // ← must be lowercase
+  return <Signin />
 }

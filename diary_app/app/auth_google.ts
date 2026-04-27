@@ -1,50 +1,65 @@
-import { useEffect, useState } from "react";
-import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
-import { GoogleAuthProvider, signInWithCredential, User } from "firebase/auth";
+import * as WebBrowser from "expo-web-browser";
+import { useEffect } from "react";
+import { GoogleAuthProvider, signInWithCredential } from "firebase/auth";
+import { Platform } from "react-native";
 import auth from "../config/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const useGoogleAuth = () => {
-  const [user, setUser] = useState<User | null>(null);
+const backendUrl = Platform.OS === "android"
+  ? "http://10.0.2.2:3000"
+  : "http://localhost:3000";
 
+const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId:
-      "82158931099-3o3m2s3l5m36kp193khrtuekaba5sv2c.apps.googleusercontent.com",
-    androidClientId:
-      "469329963968-26ouu57mcmg3j7dtlml4m2rdbd9o957j.apps.googleusercontent.com",
-    iosClientId:
-      "82158931099-uplv3fi1jrfj5831gr0m15ngvgi196s6.apps.googleusercontent.com",
-    scopes: ["openid", "email", "profile"],
-    // ✅ retire androidClientId, iosClientId et redirectUri
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   });
 
   useEffect(() => {
     const signIn = async () => {
-      console.log("📡 response type:", response?.type);
       if (response?.type !== "success") return;
 
-      const { id_token } = response.params;
-      if (!id_token) {
-        console.error("❌ No id_token received");
-        return;
-      }
+      const { authentication } = response;
+      const token = authentication?.accessToken;
+
+      if (!token) return;
 
       try {
-        const credential = GoogleAuthProvider.credential(id_token);
-        const result = await signInWithCredential(auth, credential);
-        setUser(result.user);
-        console.log("✅ Google login success:", result.user.email);
-      } catch (error) {
-        console.error("❌ Firebase Google error:", error);
+        // 1. Appel backend → upsert en base PostgreSQL
+        const res = await fetch(`${backendUrl}/auth/google`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          console.error("❌ Backend Google error:", data.error);
+          return;
+        }
+
+        console.log("✅ Google user in DB:", data.user);
+
+        // 2. Firebase Auth
+        const credential = GoogleAuthProvider.credential(
+          authentication?.idToken ?? null,
+          token
+        );
+        await signInWithCredential(auth, credential);
+        console.log("✅ Google login success:", data.user.login);
+
+      } catch (err) {
+        console.error("❌ Google auth error:", err);
       }
     };
 
     signIn();
   }, [response]);
 
-  return { promptAsync, user, request };
+  return { promptAsync, request };
 };
 
 export default useGoogleAuth;

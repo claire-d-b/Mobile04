@@ -1,109 +1,82 @@
-import * as Location from "expo-location";
-import React, { useState, useEffect, use } from "react";
-import { View, ActivityIndicator, BlurEvent, Platform } from "react-native";
-import {
-  Appbar,
-  Text,
-  IconButton,
-  Icon,
-  Menu,
-  TextInput,
-} from "react-native-paper";
-import { evaluate } from "mathjs";
-import useGoogleAuth from "./auth_google";
-import useGithubAuth from "./auth_github";
+import React, { useState } from "react";
+import { View, Platform } from "react-native";
+import { TextInput } from "react-native-paper";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { router } from "expo-router";
+import auth from "../config/firebase";
 import CTextInput from "./CTextInput";
 import CButton from "./CButton";
-import * as Crypto from "expo-crypto";
-import { useNavigation } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { router } from "expo-router";
 
-interface information {
+interface Information {
   login: string;
   password: string;
   npassword: string;
 }
 
-type RootStackParamList = {
-  signin: undefined;
-  register: undefined;
-};
-
-type SigninScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "register"
->;
+const backendUrl = Platform.OS === "android"
+  ? "http://10.0.2.2:3000"
+  : "http://localhost:3000";
 
 const Register = () => {
-  const navigation = useNavigation<SigninScreenNavigationProp>();
   const [login, setLogin] = useState("");
-  const [text, setText] = useState("");
   const [password, setPassword] = useState("");
   const [npassword, setNPassword] = useState("");
-
   const [secure, setSecure] = useState(true);
   const [nsecure, setNSecure] = useState(true);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async ({ login, password, npassword }: information) => {
+  const handleSubmit = async ({ login, password, npassword }: Information) => {
+    setError("");
+
+    if (password !== npassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     try {
-      if (password === npassword) {
-        if (Platform.OS === "android") {
-          const res = await fetch("http://10.0.2.2:3000/users/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ login, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
-        } else {
-          const res = await fetch("http://localhost:3000/users/register", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ login, password }),
-          });
-          const data = await res.json();
-          if (!res.ok) console.error("Failed to create user");
-          else console.log("User created:", data);
-        }
-      } else {
-        console.error("Passwords do not match");
+      // 1. Appel backend
+      const res = await fetch(`${backendUrl}/users/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ login, password }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Registration failed");
+        console.error("❌ Registration failed:", data.error);
+        return;
       }
-    } catch (error) {
-      console.error("Error during registration:", error);
+
+      console.log("✅ Backend registration success:", data.user);
+
+      // 2. Firebase Auth
+      await createUserWithEmailAndPassword(auth, login, password);
+      console.log("✅ Firebase registration success");
+
+      // 3. _layout.tsx détecte onAuthStateChanged → redirige vers /(tabs)
+
+    } catch (err: any) {
+      console.error("❌ Error during registration:", err);
+      if (err.code === "auth/email-already-in-use") {
+        setError("Account already exists");
+      } else {
+        setError("An error occurred");
+      }
     }
   };
 
   return (
-    <View
-      style={{
-        width: "100%",
-        height: "100%",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <View
-        style={{
-          width: "100%",
-          padding: 10,
-        }}
-      >
+    <View style={{ width: "100%", height: "100%", flexDirection: "column",
+      alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: "100%", padding: 10 }}>
         <CTextInput
           secureTextEntry={false}
           right={<></>}
-          onBlur={() => setLogin(text)}
-          onChangeText={(text: string) => {
-            setText(text);
-          }}
+          onBlur={() => {}}
+          onChangeText={(text: string) => setLogin(text)}
           label="login"
-          msg={text}
+          msg={login}
           placeholder="Type your login"
           variant="outlined"
           textColor="#534DB3"
@@ -125,9 +98,7 @@ const Register = () => {
             />
           }
           onBlur={() => {}}
-          onChangeText={(secret) => {
-            setPassword(secret);
-          }}
+          onChangeText={(secret) => setPassword(secret)}
           label="password"
           msg={password}
           placeholder="Type your password"
@@ -151,9 +122,7 @@ const Register = () => {
             />
           }
           onBlur={() => {}}
-          onChangeText={(nsecret) => {
-            setNPassword(nsecret);
-          }}
+          onChangeText={(nsecret) => setNPassword(nsecret)}
           label="confirm password"
           msg={npassword}
           placeholder="confirm your password"
@@ -168,6 +137,17 @@ const Register = () => {
           contentStyle={{}}
           style={{ width: "100%", borderRadius: 10 }}
         />
+        {error ? (
+          <CButton
+            msg={error}
+            variant="text"
+            textColor="red"
+            style={{}}
+            buttonColor="transparent"
+            labelStyle={{}}
+            onClick={() => {}}
+          />
+        ) : null}
         <CButton
           onClick={() => handleSubmit({ login, password, npassword })}
           msg="Send"
