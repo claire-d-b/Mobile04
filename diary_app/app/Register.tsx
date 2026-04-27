@@ -88,6 +88,7 @@ const Register = () => {
           selectionColor="#534DB3"
           contentStyle={{}}
           style={{ width: "100%" }}
+          disabled={false}
         />
         <CTextInput
           secureTextEntry={secure}
@@ -112,6 +113,7 @@ const Register = () => {
           selectionColor="#534DB3"
           contentStyle={{}}
           style={{ width: "100%", borderRadius: 10 }}
+          disabled={false}
         />
         <CTextInput
           secureTextEntry={nsecure}
@@ -136,6 +138,7 @@ const Register = () => {
           selectionColor="#534DB3"
           contentStyle={{}}
           style={{ width: "100%", borderRadius: 10 }}
+          disabled={false}
         />
         {error ? (
           <CButton

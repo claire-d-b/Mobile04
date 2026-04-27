@@ -20,6 +20,7 @@ interface Props {
   selectionColor: string;
   contentStyle: {};
   style: {};
+  disabled: boolean | undefined;
 }
 
 export default function CTextInput({
@@ -40,6 +41,7 @@ export default function CTextInput({
   selectionColor,
   contentStyle,
   style,
+  disabled,
 }: Props) {
   return (
     <TextInput
@@ -59,6 +61,7 @@ export default function CTextInput({
       selectionColor={selectionColor}
       contentStyle={contentStyle}
       style={style}
+      disabled={disabled}
     />
   );
 }
