@@ -1,7 +1,11 @@
-import * as WebBrowser from "expo-web-browser";
-
-// WebBrowser.maybeCompleteAuthSession();
+// app/oauthredirect.tsx
+import { useEffect } from "react";
+import { useRouter } from "expo-router";
 
 export default function OAuthRedirect() {
-  return <>Hallo Welt</>;
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/signin");
+  }, []);
+  return null;
 }

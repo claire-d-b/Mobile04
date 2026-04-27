@@ -301,6 +301,8 @@ npx firebase-tools projects:list
 
 npx expo install @react-native-async-storage/async-storage
 
+npm install -D babel-plugin-module-resolver
+
 npx expo run:android --device
 npx expo start --dev-client
 npx expo run:android

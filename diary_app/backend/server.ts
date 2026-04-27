@@ -1,0 +1,202 @@
+// backend/server.ts
+import express from "express";
+import type { Request, Response } from "express";
+import pg from "pg";
+import bcrypt from "bcrypt";
+import cors from "cors";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const app = express();
+
+// ✅ Middlewares AVANT les routes
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const { Pool } = pg;
+
+const pool = new Pool({
+  user: process.env.DB_USER || "claire",
+  host: process.env.DB_HOST || "localhost",
+  database: process.env.DB_NAME || "diary_app",
+  password: process.env.DB_PASSWORD || "",
+  port: Number(process.env.DB_PORT) || 5432,
+});
+
+// Types
+interface RegisterBody { login: string; password: string; }
+interface LoginBody { login: string; password: string; }
+interface GithubAuthBody { code: string; }
+interface GoogleAuthBody { token: string; }
+interface DiaryEntryBody { email: string; date: string; title: string; feeling: number; content: string; }
+interface GithubTokenResponse { access_token?: string; error?: string; }
+interface GithubProfile { id: number; login: string; email: string | null; }
+interface GoogleProfile { sub?: string; email: string; }
+
+// Init DB
+const initDB = async (): Promise<void> => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        login VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255),
+        provider VARCHAR(50) DEFAULT 'local',
+        provider_id VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS diary_entries (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        date DATE NOT NULL DEFAULT CURRENT_DATE,
+        title VARCHAR(255),
+        feeling INTEGER CHECK (feeling BETWEEN 1 AND 5),
+        content TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log("✅ Tables ready");
+  } catch (err) {
+    console.error("❌ DB init failed:", err);
+  }
+};
+
+initDB().then(() => {
+  app.listen(3000, () => console.log("Server running on port 3000"));
+});
+
+// REGISTER USER
+app.post("/users/register", async (req: Request<{}, {}, RegisterBody>, res: Response) => {
+  const { login, password } = req.body;
+  try {
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const result = await pool.query(
+      "INSERT INTO users(login, password) VALUES($1, $2) RETURNING id, login",
+      [login, hashedPassword],
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+// LOGIN USER
+app.post("/users/login", async (req: Request<{}, {}, LoginBody>, res: Response) => {
+  const { login, password } = req.body;
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE login = $1", [login]);
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    const user = result.rows[0];
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+    res.json({ message: "Login success", user: { id: user.id, login: user.login } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Login failed" });
+  }
+});
+
+// AUTH GITHUB
+app.post("/auth/github", async (req: Request<{}, {}, GithubAuthBody>, res: Response) => {
+  const { code } = req.body;
+  console.log("📡 GitHub code reçu:", code);
+  try {
+    const response = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        client_id: "Ov23liMl9KamCid3JjRa",
+        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        code,
+      }),
+    });
+    const data = await response.json() as GithubTokenResponse;
+    console.log("✅ GitHub token response:", data);
+    if (data.error) return res.status(400).json({ error: data.error });
+
+    const profile = await fetch("https://api.github.com/user", {
+      headers: { Authorization: `Bearer ${data.access_token}` },
+    }).then((r) => r.json()) as GithubProfile;
+    console.log("✅ GitHub profile:", profile);
+
+    const result = await pool.query(
+      `INSERT INTO users (login, provider, provider_id)
+       VALUES ($1, 'github', $2)
+       ON CONFLICT (login) DO UPDATE SET provider = 'github', provider_id = $2
+       RETURNING id, login`,
+      [profile.email || profile.login, String(profile.id)]
+    );
+    res.json({ access_token: data.access_token, user: result.rows[0] });
+  } catch (err) {
+    console.error("❌ GitHub auth error:", err);
+    res.status(500).json({ error: "GitHub auth failed" });
+  }
+});
+
+// AUTH GOOGLE
+app.post("/auth/google", async (req: Request<{}, {}, GoogleAuthBody>, res: Response) => {
+  const { token } = req.body;
+  try {
+    const profile = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((r) => r.json()) as GoogleProfile;
+    console.log("✅ Google profile:", profile);
+    if (!profile.sub) return res.status(400).json({ error: "Invalid Google token" });
+
+    const result = await pool.query(
+      `INSERT INTO users (login, provider, provider_id)
+       VALUES ($1, 'google', $2)
+       ON CONFLICT (login) DO UPDATE SET provider = 'google', provider_id = $2
+       RETURNING id, login`,
+      [profile.email, String(profile.sub)]
+    );
+    res.json({ user: result.rows[0] });
+  } catch (err) {
+    console.error("❌ Google auth error:", err);
+    res.status(500).json({ error: "Google auth failed" });
+  }
+});
+
+// CREATE DIARY ENTRY
+app.post("/entries", async (req: Request<{}, {}, DiaryEntryBody>, res: Response) => {
+  const { email, date, title, feeling, content } = req.body;
+  try {
+    const userResult = await pool.query("SELECT id FROM users WHERE login = $1", [email]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    const user_id: number = userResult.rows[0].id;
+    const result = await pool.query(
+      `INSERT INTO diary_entries (user_id, date, title, feeling, content)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [user_id, date, title, feeling, content]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to create entry" });
+  }
+});
+
+// GET ENTRIES FOR USER
+app.get("/entries/:email", async (req: Request<{ email: string }>, res: Response) => {
+  const { email } = req.params;
+  try {
+    const result = await pool.query(
+      `SELECT e.* FROM diary_entries e
+       JOIN users u ON e.user_id = u.id
+       WHERE u.login = $1 ORDER BY e.date DESC`,
+      [email]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch entries" });
+  }
+});

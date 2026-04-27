@@ -28,8 +28,7 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "com.anonymous.diaryapp",
-              "host": "oauthredirect"
+              "scheme": "com.anonymous.diaryapp"
             }
           ],
           "category": [
