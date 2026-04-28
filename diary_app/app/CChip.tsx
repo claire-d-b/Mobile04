@@ -11,10 +11,11 @@ interface Props {
   buttonColor: string;
   children: React.ReactNode;
   icon: string;
+  disabled: boolean | undefined;
 }
 
-const CChip = ({onPress, label, mode, children, icon}: Props) => (
-  <Chip icon={icon} mode={mode} onPress={() => console.log('Pressed')} accessibilityLabel={label}>{children}</Chip>
+const CChip = ({onPress, label, mode, children, icon, disabled}: Props) => (
+  <Chip icon={icon} mode={mode} onPress={() => console.log('Pressed')} accessibilityLabel={label} disabled={disabled}>{children}</Chip>
 );
 
 export default CChip;

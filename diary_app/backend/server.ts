@@ -104,14 +104,19 @@ app.post("/user/register", async (req: Request<{}, {}, RegisterBody>, res: Respo
 app.post("/user/login", async (req: Request<{}, {}, LoginBody>, res: Response) => {
   const { login, password } = req.body;
   try {
-    const result = await pool.query(
+     let result = await pool.query(
       "SELECT * FROM users WHERE login = $1",
       [login]
     );
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: "User not found" });
-    }
-    const user = result.rows[0];
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const insertResult = await pool.query(
+        `INSERT INTO users (login, password, provider) 
+         VALUES ($1, $2, 'local') 
+         RETURNING *`,
+        [login, hashedPassword]
+      )
+    const user = result.rows[0] ?? insertResult;
 
     // Vérifie que c'est un compte local
     if (user.provider !== "local") {
@@ -135,7 +140,7 @@ app.post("/user/login", async (req: Request<{}, {}, LoginBody>, res: Response) =
     res.json({
       message: "Login success",
       user: { id: user.id, login: user.login, provider: user.provider }
-    });
+    });}
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Login failed" });

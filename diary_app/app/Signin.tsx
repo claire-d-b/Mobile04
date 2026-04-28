@@ -54,6 +54,7 @@ const SignIn = () => {
       } else {
         // Compte Google/GitHub → Firebase
         await signInWithEmailAndPassword(auth, login, password);
+        setLogin('')
         // _layout.tsx redirige via onAuthStateChanged
       }
     } catch (err) {
