@@ -21,6 +21,8 @@ interface Props {
   contentStyle: {};
   style: {};
   disabled: boolean | undefined;
+  multiline: boolean | undefined;
+  numberOfLines: number;
 }
 
 export default function CTextInput({
@@ -42,6 +44,8 @@ export default function CTextInput({
   contentStyle,
   style,
   disabled,
+  multiline,
+  numberOfLines
 }: Props) {
   return (
     <TextInput
@@ -62,6 +66,8 @@ export default function CTextInput({
       contentStyle={contentStyle}
       style={style}
       disabled={disabled}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
     />
   );
 }

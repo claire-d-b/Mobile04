@@ -89,6 +89,8 @@ const Register = () => {
           contentStyle={{}}
           style={{ width: "100%" }}
           disabled={false}
+          multiline={false}
+          numberOfLines={0}
         />
         <CTextInput
           secureTextEntry={secure}
@@ -114,6 +116,8 @@ const Register = () => {
           contentStyle={{}}
           style={{ width: "100%", borderRadius: 10 }}
           disabled={false}
+          multiline={false}
+          numberOfLines={0}
         />
         <CTextInput
           secureTextEntry={nsecure}
@@ -139,6 +143,8 @@ const Register = () => {
           contentStyle={{}}
           style={{ width: "100%", borderRadius: 10 }}
           disabled={false}
+          multiline={false}
+          numberOfLines={0}
         />
         {error ? (
           <CButton
