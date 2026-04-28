@@ -16,7 +16,7 @@ const CIconButton = ({ icon, iconColor, containerColor,  size, onPress }: Props)
     iconColor={iconColor}
     containerColor={containerColor}
     size={size}
-    onPress={() => console.log('Pressed')}
+    onPress={onPress}
   />
 );
 

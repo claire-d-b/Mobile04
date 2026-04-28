@@ -82,7 +82,6 @@ const SignIn = () => {
           style={{ width: "100%" }}
           disabled={false}
           multiline={false}
-          numberOfLines={0}
         />
         <CTextInput
           secureTextEntry={secure}
@@ -109,7 +108,6 @@ const SignIn = () => {
           style={{ width: "100%" }}
           disabled={false}
           multiline={false}
-          numberOfLines={0}
         />
         {error ? (
           <CButton

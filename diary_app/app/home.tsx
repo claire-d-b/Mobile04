@@ -1,8 +1,9 @@
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
-import { View } from "react-native";
+import { View, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import { useEffect, useState } from "react";
+import { getAuth } from "firebase/auth";
 import CTextInput from "./CTextInput";
 import CIconButton from "./CIconButton";
 import CRating from './CRating'
@@ -13,14 +14,55 @@ type RootStackParamList = {
   home: undefined;
 };
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "home"
->;
+const backendUrl = Platform.OS === "android"
+  ? "http://10.0.2.2:3000"
+  : "http://localhost:3000";
+
 
 const Home = () => {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
-  const [text, setText] = useState("")
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [feeling, setFeeling] = useState(0);
+
+  const auth = getAuth();
+  const email = auth.currentUser?.email ?? "";
+  console.log(auth.currentUser)
+
+  const handleSubmit = async () => {
+    if (!title || !content) return;
+
+    try {
+      const res = await fetch(`${backendUrl}/entries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          date: new Date().toISOString().split("T")[0], // YYYY-MM-DD
+          title,
+          feeling,
+          content,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("❌ Failed to create entry:", data.error);
+        return;
+      }
+
+      console.log("✅ Entry created:", data);
+
+      // Reset
+      setTitle("");
+      setContent("");
+      setFeeling(0);
+
+    } catch (err) {
+      console.error("❌ Error creating entry:", err);
+    }
+  };
+
   return (
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
         alignItems: "center", justifyContent: "center" }}>
@@ -29,9 +71,9 @@ const Home = () => {
             secureTextEntry={false}
             right={<></>}
             onBlur={() => {}}
-            onChangeText={(str) => {setText(str)}}
+            onChangeText={(str) => {setTitle(str)}}
             label="Title"
-            msg={text}
+            msg={title}
             placeholder="Please add a title"
             variant="outlined"
             textColor="#534DB3"
@@ -45,11 +87,10 @@ const Home = () => {
             style={{ marginHorizontal: 20 }}
             disabled={false}
             multiline={false}
-            numberOfLines={0}
             />
           </View>
           <View style={{ display: "flex", width: "100%" }}>
-            <CRating color="#534DB3" />
+            <CRating setRating={setFeeling} color="#534DB3" />
           </View>
         <View style={{ display: "flex", flexDirection: "column", width: "100%", justifyContent: "center", alignItems: "center" }}>
           <View style={{ display: "flex", flexDirection: "column", width: "100%" }}>
@@ -57,9 +98,9 @@ const Home = () => {
             secureTextEntry={false}
             right={<></>}
             onBlur={() => {}}
-            onChangeText={(str) => {setText(str)}}
+            onChangeText={(str) => {setContent(str)}}
             label="Content"
-            msg={text}
+            msg={content}
             placeholder="Please add entries"
             variant="outlined"
             textColor="#534DB3"
@@ -73,11 +114,10 @@ const Home = () => {
             style={{ marginHorizontal: 20, height: 100}}
             disabled={false}
             multiline={true}
-            numberOfLines={3}
             />
           </View>
           <View style={{ alignSelf: "flex-end", marginRight: 20 }}>
-            <CIconButton icon="plus" iconColor="white" containerColor="#534DB3" size={20} onPress={() => {}} /> 
+            <CIconButton icon="plus" iconColor="white" containerColor="#534DB3" size={20} onPress={handleSubmit} /> 
           </View>
         </View>
       <Text style={{ color: "black" }}>This is the homepage</Text>
