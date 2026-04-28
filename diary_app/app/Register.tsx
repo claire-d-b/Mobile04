@@ -4,6 +4,7 @@ import { TextInput } from "react-native-paper";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { router } from "expo-router";
 import auth from "../config/firebase";
+import { useAuthContext } from "../context/AuthContext"
 import CTextInput from "./CTextInput";
 import CButton from "./CButton";
 
@@ -24,18 +25,18 @@ const Register = () => {
   const [secure, setSecure] = useState(true);
   const [nsecure, setNSecure] = useState(true);
   const [error, setError] = useState("");
+  const { setLocalLogin } = useAuthContext();
 
   const handleSubmit = async ({ login, password, npassword }: Information) => {
     setError("");
-
     if (password !== npassword) {
       setError("Passwords do not match");
       return;
-    }
+    }    
 
     try {
       // 1. Appel backend
-      const res = await fetch(`${backendUrl}/users/register`, {
+      const res = await fetch(`${backendUrl}/user/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -49,10 +50,8 @@ const Register = () => {
       }
 
       console.log("✅ Backend registration success:", data.user);
-
-      // 2. Firebase Auth
-      await createUserWithEmailAndPassword(auth, login, password);
-      console.log("✅ Firebase registration success");
+      await setLocalLogin(login);
+      router.push("/home")
 
       // 3. _layout.tsx détecte onAuthStateChanged → redirige vers /(tabs)
 

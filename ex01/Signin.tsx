@@ -45,7 +45,7 @@ const SignIn = () => {
   const handleSubmit = async ({ login, password }: information) => {
     try {
       if (Platform.OS === "android") {
-        const res = await fetch("http://10.0.2.2:3000/users/login", {
+        const res = await fetch("http://10.0.2.2:3000/user/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -55,7 +55,7 @@ const SignIn = () => {
         const data = await res.json();
         console.log("Log-in successful:", data);
       } else {
-        const res = await fetch("http://127.0.0.1:3000/users/login", {
+        const res = await fetch("http://127.0.0.1:3000/user/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

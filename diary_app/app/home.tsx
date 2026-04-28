@@ -4,15 +4,11 @@ import { View, Platform } from "react-native";
 import { Text } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
+import { useAuthContext } from "../context/AuthContext"
 import CTextInput from "./CTextInput";
 import CIconButton from "./CIconButton";
 import CRating from './CRating'
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-
-
-type RootStackParamList = {
-  home: undefined;
-};
 
 const backendUrl = Platform.OS === "android"
   ? "http://10.0.2.2:3000"
@@ -20,16 +16,21 @@ const backendUrl = Platform.OS === "android"
 
 
 const Home = () => {
+  const { localLogin } = useAuthContext();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [feeling, setFeeling] = useState(0);
 
   const auth = getAuth();
-  const email = auth.currentUser?.email ?? "";
+  const email = auth.currentUser?.email ?? localLogin;
   console.log(auth.currentUser)
 
   const handleSubmit = async () => {
     if (!title || !content) return;
+    console.log("📡 auth.currentUser:", auth.currentUser?.email);
+    console.log("📡 localLogin:", localLogin);
+    console.log("📡 email utilisé:", email);
+
 
     try {
       const res = await fetch(`${backendUrl}/entries`, {

@@ -31,7 +31,7 @@ const SignIn = () => {
     setError("");
     try {
       // 1. Appel backend
-      const res = await fetch(`${backendUrl}/users/login`, {
+      const res = await fetch(`${backendUrl}/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ login, password }),
@@ -44,14 +44,18 @@ const SignIn = () => {
         return;
       }
 
-      console.log("✅ Backend login success:", data.user);
+      const provider = data.user?.provider;
+      console.log("✅ Backend login success, provider:", provider);
 
-      // 2. Firebase Auth
-      await signInWithEmailAndPassword(auth, login, password);
-      console.log("✅ Firebase login success");
-
-      // 3. _layout.tsx détecte onAuthStateChanged → redirige vers /(tabs)
-
+      if (provider === "local") {
+        // Compte local → pas de Firebase
+        console.log("✅ Backend registration success:", data.user);
+        router.replace("/signin");
+      } else {
+        // Compte Google/GitHub → Firebase
+        await signInWithEmailAndPassword(auth, login, password);
+        // _layout.tsx redirige via onAuthStateChanged
+      }
     } catch (err) {
       console.error("❌ Error during login:", err);
       setError("An error occurred");

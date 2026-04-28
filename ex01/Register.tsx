@@ -49,7 +49,7 @@ const Register = () => {
     try {
       if (password === npassword) {
         if (Platform.OS === "android") {
-          const res = await fetch("http://10.0.2.2:3000/users/register", {
+          const res = await fetch("http://10.0.2.2:3000/user/register", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -59,7 +59,7 @@ const Register = () => {
           const data = await res.json();
           console.log("User created:", data);
         } else {
-          const res = await fetch("http://localhost:3000/users/register", {
+          const res = await fetch("http://localhost:3000/user/register", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

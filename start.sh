@@ -206,7 +206,7 @@ const pool = new Pool({
 });
 
 // REGISTER USER
-app.post("/users/register", async (req, res) => {
+app.post("/user/register", async (req, res) => {
   const { login, password } = req.body;
 
   try {
@@ -226,7 +226,7 @@ app.post("/users/register", async (req, res) => {
 });
 
 // LOGIN USER
-app.post("/users/login", async (req, res) => {
+app.post("/user/login", async (req, res) => {
   const { login, password } = req.body;
 
   try {

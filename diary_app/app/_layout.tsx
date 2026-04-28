@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import * as WebBrowser from "expo-web-browser";
 import auth from "../config/firebase";
+import { AuthProvider } from "@/context/AuthContext";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -35,11 +36,13 @@ export default function RootLayout() {
   }, [user, ready]);
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="signin" />
-      <Stack.Screen name="register" />
-      <Stack.Screen name="home" />
-    </Stack>
+    <AuthProvider>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="signin" />
+        <Stack.Screen name="register" />
+        <Stack.Screen name="home" />
+      </Stack>
+    </AuthProvider>
   );
 }
