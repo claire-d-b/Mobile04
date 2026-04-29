@@ -10,6 +10,7 @@ import CIconButton from "./CIconButton";
 import CRating from './CRating'
 import CChip from "./CChip";
 import CModal from "./CModal";
+import CAvatar from "./CAvatar"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const emotions = [
@@ -125,6 +126,7 @@ const Home = () => {
     <PaperProvider>
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
         alignItems: "center", justifyContent: "center" }}>
+          <CAvatar size={80} icon="account" color="white" style={{ backgroundColor: "#534DB3" }} />
         <CModal visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
           <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <CTextInput
