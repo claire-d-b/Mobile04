@@ -150,11 +150,11 @@ const Register = () => {
             style={{}}
             buttonColor="transparent"
             labelStyle={{}}
-            onClick={() => {}}
+            onPress={() => {}}
           />
         ) : null}
         <CButton
-          onClick={() => handleSubmit({ login, password, npassword })}
+          onPress={() => handleSubmit({ login, password, npassword })}
           msg="Send"
           variant="contained"
           textColor="white"
@@ -163,7 +163,7 @@ const Register = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => router.push("/signin")}
+          onPress={() => router.push("/signin")}
           msg="Already registered ? Sign-in"
           variant="text"
           textColor="#534DB3"

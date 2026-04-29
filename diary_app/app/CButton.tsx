@@ -2,7 +2,7 @@ import { Button } from "react-native-paper";
 import { GestureResponderEvent } from "react-native";
 
 interface Props {
-  onClick: (e: GestureResponderEvent) => void;
+  onPress: (e: GestureResponderEvent) => void;
   msg: string;
   variant: "text" | "outlined" | "contained" | "elevated" | "contained-tonal";
   textColor: string;
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function CButton({
-  onClick,
+  onPress,
   msg,
   variant,
   textColor,
@@ -22,7 +22,7 @@ export default function CButton({
 }: Props) {
   return (
     <Button
-      onPress={onClick}
+      onPress={onPress}
       style={style}
       mode={variant}
       textColor={textColor}

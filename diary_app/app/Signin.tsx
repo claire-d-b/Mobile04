@@ -24,8 +24,8 @@ const SignIn = () => {
   const [secure, setSecure] = useState(true);
   const [error, setError] = useState("");
 
-  const { promptAsync: googlePrompt } = useGoogleAuth();
-  const { promptAsync: githubPrompt } = useGithubAuth();
+const { promptAsync: googlePrompt, request: googleRequest } = useGoogleAuth();
+const { promptAsync: githubPrompt, request: githubRequest } = useGithubAuth();
 
   const handleSubmit = async ({ login, password }: Information) => {
     setError("");
@@ -122,11 +122,11 @@ const SignIn = () => {
             style={{}}
             buttonColor="transparent"
             labelStyle={{}}
-            onClick={() => {}}
+            onPress={() => {}}
           />
         ) : null}
         <CButton
-          onClick={() => handleSubmit({ login, password })}
+          onPress={() => handleSubmit({ login, password })}
           msg="Send"
           variant="contained"
           textColor="white"
@@ -135,7 +135,7 @@ const SignIn = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => router.push("/register")}
+          onPress={() => router.push("/register")}
           msg="Not registered yet ? Create an account"
           variant="text"
           textColor="#534DB3"
@@ -144,7 +144,7 @@ const SignIn = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => googlePrompt()}
+          onPress={() => googleRequest && googlePrompt()}
           msg="Connect with Google"
           variant="text"
           textColor="gray"
@@ -153,7 +153,7 @@ const SignIn = () => {
           labelStyle={{}}
         />
         <CButton
-          onClick={() => githubPrompt()}
+          onPress={() => githubRequest && githubPrompt()}
           msg="Connect with Github"
           variant="text"
           textColor="gray"

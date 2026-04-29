@@ -1,14 +1,15 @@
 import { useRouter } from "expo-router";
 import { useNavigation } from "expo-router";
 import { View, Platform } from "react-native";
-import { Text } from "react-native-paper";
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useAuthContext } from "../context/AuthContext"
+import { Modal, Portal, Text, Button, PaperProvider } from 'react-native-paper';
 import CTextInput from "./CTextInput";
 import CIconButton from "./CIconButton";
 import CRating from './CRating'
 import CChip from "./CChip";
+import CModal from "./CModal";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const emotions = [
@@ -116,46 +117,19 @@ const Home = () => {
   }, [email]);
 
   return (
+    <PaperProvider>
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
         alignItems: "center", justifyContent: "center" }}>
-        <View style={{ width: "100%", alignSelf: "flex-start" }}>
-          
-          <CTextInput
-            secureTextEntry={false}
-            right={<></>}
-            onBlur={() => {}}
-            onChangeText={(str) => {setTitle(str)}}
-            label="Title"
-            msg={title}
-            placeholder="Please add a title"
-            variant="outlined"
-            textColor="#534DB3"
-            outlineColor="#534DB3"
-            outlineStyle={{ borderRadius: 10 }}
-            activeOutlineColor="#534DB3"
-            underlineColor="#534DB3"
-            activeUnderlineColor="#534DB3"
-            selectionColor="#534DB3"
-            contentStyle={{}}
-            style={{ marginHorizontal: 20 }}
-            disabled={false}
-            multiline={false}
-            />
-          </View>
-          <View style={{ display: "flex", width: "100%" }}>
-            <CRating setRating={setFeeling} color="#BBB0D1" focusColor="#534DB3" />
-          </View>
-          
-          <View style={{ display: "flex", flexDirection: "column", width: "100%", justifyContent: "center", alignItems: "center" }}>
-            <View style={{ display: "flex", flexDirection: "column", width: "100%" }}>
-              <CTextInput
+        <CModal style={{ width: "100%", height: "100%" }}>
+          <View style={{ width: "100%", alignSelf: "flex-start" }}>
+            <CTextInput
               secureTextEntry={false}
               right={<></>}
               onBlur={() => {}}
-              onChangeText={(str) => {setContent(str)}}
-              label="Content"
-              msg={content}
-              placeholder="Please add entries"
+              onChangeText={(str) => {setTitle(str)}}
+              label="Title"
+              msg={title}
+              placeholder="Please add a title"
               variant="outlined"
               textColor="#534DB3"
               outlineColor="#534DB3"
@@ -165,15 +139,44 @@ const Home = () => {
               activeUnderlineColor="#534DB3"
               selectionColor="#534DB3"
               contentStyle={{}}
-              style={{ marginHorizontal: 20, height: 100}}
+              style={{ marginHorizontal: 20 }}
               disabled={false}
-              multiline={true}
-              />
+              multiline={false}
+            />
             </View>
-            <View style={{ alignSelf: "flex-end", marginRight: 20 }}>
-              <CIconButton icon="plus" iconColor="white" containerColor="#534DB3" size={20} onPress={handleSubmit} /> 
+            <View style={{ display: "flex", width: "100%" }}>
+              <CRating setRating={setFeeling} color="#BBB0D1" focusColor="#534DB3" />
             </View>
-          </View>
+            
+            <View style={{ display: "flex", flexDirection: "column", width: "100%", justifyContent: "center", alignItems: "center" }}>
+              <View style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+                <CTextInput
+                secureTextEntry={false}
+                right={<></>}
+                onBlur={() => {}}
+                onChangeText={(str) => {setContent(str)}}
+                label="Content"
+                msg={content}
+                placeholder="Please add entries"
+                variant="outlined"
+                textColor="#534DB3"
+                outlineColor="#534DB3"
+                outlineStyle={{ borderRadius: 10 }}
+                activeOutlineColor="#534DB3"
+                underlineColor="#534DB3"
+                activeUnderlineColor="#534DB3"
+                selectionColor="#534DB3"
+                contentStyle={{}}
+                style={{ marginHorizontal: 20, height: 100}}
+                disabled={false}
+                multiline={true}
+                />
+              </View>
+              <View style={{ alignSelf: "flex-end", marginRight: 20 }}>
+                <CIconButton icon="plus" iconColor="white" containerColor="#534DB3" size={20} onPress={handleSubmit} /> 
+              </View>
+            </View>
+          </CModal>
           <Text style={{ color: "black" }}>This is the homepage</Text>
           { entries && entries.length > 0 && entries.map((e, i) => {
             return <View key={`entry_${i}`} style={{ display: "flex", flexDirection: "row", marginHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
@@ -183,6 +186,7 @@ const Home = () => {
             </View>
           })}
         </View>
+        </PaperProvider>
   );
 };
 
