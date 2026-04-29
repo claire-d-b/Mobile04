@@ -13,29 +13,37 @@ const discovery = {
 };
 
 const useGithubAuth = () => {
-  const redirectUri = AuthSession.makeRedirectUri();
-  const isHandled = useRef(false); // ✅ empêche le double appel
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: "com.anonymous.diaryapp", // ⚠️ MUST match app.json
+  });
+
+  const isHandled = useRef(false);
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
       clientId: "Ov23liMl9KamCid3JjRa",
       scopes: ["read:user", "user:email"],
       redirectUri,
-      usePKCE: false, // ✅ désactive PKCE — GitHub OAuth App ne le supporte pas
+
+      // ❗ GitHub OAuth Apps DO NOT support PKCE
+      usePKCE: false,
     },
-    discovery,
+    discovery
   );
 
   useEffect(() => {
-    const signIn = async () => {
-      if (response?.type !== "success") return;
-      if (isHandled.current) return;
-      isHandled.current = true;
+    if (response?.type !== "success") return;
+    if (isHandled.current) return;
 
+    isHandled.current = true;
+
+    const signIn = async () => {
       const { code } = response.params;
-      const codeVerifier = request?.codeVerifier; // ✅ récupère le code_verifier
-      console.log("📡 code:", code);
-      console.log("📡 codeVerifier:", codeVerifier);
+
+      if (!code) {
+        console.error("❌ Missing code");
+        return;
+      }
 
       const backendUrl =
         Platform.OS === "android"
@@ -46,20 +54,29 @@ const useGithubAuth = () => {
         const res = await fetch(backendUrl, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, codeVerifier }), // ✅ envoie les deux
+          body: JSON.stringify({
+            code,
+            redirectUri, // ✅ send this instead of codeVerifier
+          }),
         });
 
-        const text = await res.text();
-        console.log("📡 Backend raw response:", text);
-        const data = JSON.parse(text);
-
-        if (data.error) {
-          console.error("❌ GitHub token error:", data.error);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error("❌ Backend error:", errText);
           return;
         }
 
+        const data = await res.json();
+
+        if (!data.access_token) {
+          console.error("❌ No access token returned");
+          return;
+        }
+
+        // Firebase login
         const credential = GithubAuthProvider.credential(data.access_token);
         await signInWithCredential(auth, credential);
+
         console.log("✅ GitHub login success");
       } catch (error) {
         console.error("❌ GitHub auth error:", error);
@@ -67,6 +84,11 @@ const useGithubAuth = () => {
     };
 
     signIn();
+
+    // optional reset if you want retry capability
+    return () => {
+      isHandled.current = false;
+    };
   }, [response]);
 
   return { promptAsync, request };

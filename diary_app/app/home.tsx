@@ -126,7 +126,9 @@ const Home = () => {
     <PaperProvider>
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
         alignItems: "center", justifyContent: "center" }}>
-          <CAvatar size={80} icon="account" color="white" style={{ backgroundColor: "#534DB3" }} />
+          <View style={{ display: "flex", flexDirection: "column"}}>
+          <CAvatar size={80} icon="account" color="white" style={{ backgroundColor: "#534DB3" }} />
+          </View>
         <CModal visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
           <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <CTextInput
@@ -189,6 +191,7 @@ const Home = () => {
             return <View key={`entry_${i}`} style={{ display: "flex", flexDirection: "row", marginHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
               <CChip onPress={() => {}} label="" mode="outlined" textStyle={{}} style={{}} buttonColor="#534DB3" icon="" disabled={false}>{e.title}</CChip>
               <CIconButton icon={emotions[(e.feeling ?? 1) - 1]} iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
+              <CIconButton icon="arrow" iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
               <Text numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{e.content}</Text>
             </View>
           })}

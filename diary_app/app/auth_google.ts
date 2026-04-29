@@ -7,9 +7,10 @@ import auth from "../config/firebase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const backendUrl = Platform.OS === "android"
-  ? "http://10.0.2.2:3000"
-  : "http://localhost:3000";
+const backendUrl =
+  Platform.OS === "android"
+    ? "http://10.0.2.2:3000"
+    : "http://localhost:3000";
 
 const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -19,21 +20,27 @@ const useGoogleAuth = () => {
   });
 
   useEffect(() => {
+    if (response?.type !== "success") return;
+
     const signIn = async () => {
-      if (response?.type !== "success") return;
-
       const { authentication } = response;
-      const token = authentication?.accessToken;
 
-      if (!token) return;
+      const accessToken = authentication?.accessToken;
+      const idToken = authentication?.idToken;
+
+      if (!accessToken || !idToken) {
+        console.error("❌ Missing tokens");
+        return;
+      }
 
       try {
-        // 1. Appel backend → upsert en base PostgreSQL
+        // 1. Backend call
         const res = await fetch(`${backendUrl}/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ token: accessToken }),
         });
+
         const data = await res.json();
 
         if (!res.ok) {
@@ -44,13 +51,10 @@ const useGoogleAuth = () => {
         console.log("✅ Google user in DB:", data.user);
 
         // 2. Firebase Auth
-        const credential = GoogleAuthProvider.credential(
-          authentication?.idToken ?? null,
-          token
-        );
+        const credential = GoogleAuthProvider.credential(idToken);
         await signInWithCredential(auth, credential);
-        console.log("✅ Google login success:", data.user.login);
 
+        console.log("✅ Google login success:", data.user.login);
       } catch (err) {
         console.error("❌ Google auth error:", err);
       }

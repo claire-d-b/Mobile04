@@ -24,8 +24,8 @@ const SignIn = () => {
   const [secure, setSecure] = useState(true);
   const [error, setError] = useState("");
 
-const { promptAsync: googlePrompt, request: googleRequest } = useGoogleAuth();
-const { promptAsync: githubPrompt, request: githubRequest } = useGithubAuth();
+  const { promptAsync: googlePrompt, request: googleRequest } = useGoogleAuth();
+  const { promptAsync: githubPrompt, request: githubRequest } = useGithubAuth();
 
   const handleSubmit = async ({ login, password }: Information) => {
     setError("");
