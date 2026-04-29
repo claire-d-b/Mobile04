@@ -4,18 +4,18 @@ import { StyleProp, ViewStyle } from "react-native";
 import CButton from './CButton';
 
 interface Props {
+    visible: boolean;
+    hideModal: () => void;
+    showModal: () => void;
     style: StyleProp<ViewStyle>;
     children: React.ReactNode;  
 }
-const CModal = ({style, children}: Props) => {
-  const [visible, setVisible] = React.useState(false);
-
-  const showModal = () => setVisible(true);
-  const hideModal = () => setVisible(false);
+const CModal = ({visible, hideModal, showModal, style, children}: Props) => {
+  
   const containerStyle = { backgroundColor: 'white', padding: 20, margin: 10, borderRadius: 10 };
 
   return (<>
-      <Portal>a
+      <Portal>
         <Modal style={style} visible={visible} onDismiss={hideModal} contentContainerStyle={containerStyle}>
           {children}
           <Text>Add a diary entry or click outside this area to dismiss.</Text>

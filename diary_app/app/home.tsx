@@ -43,6 +43,10 @@ const Home = () => {
   const [content, setContent] = useState("");
   const [feeling, setFeeling] = useState(1);
 
+  const [visible, setVisible] = useState(false);
+  const showModal = () => setVisible(true);
+  const hideModal = () => setVisible(false);
+
   const auth = getAuth();
   const email = auth.currentUser?.email ?? localLogin;
   console.log(auth.currentUser)
@@ -106,6 +110,7 @@ const Home = () => {
       setContent("");
       setFeeling(1);
       await fetchEntries();
+      hideModal();
 
     } catch (err) {
       console.error("❌ Error creating entry:", err);
@@ -120,7 +125,7 @@ const Home = () => {
     <PaperProvider>
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
         alignItems: "center", justifyContent: "center" }}>
-        <CModal style={{ width: "100%", height: "100%" }}>
+        <CModal visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
           <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <CTextInput
               secureTextEntry={false}

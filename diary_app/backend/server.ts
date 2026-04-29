@@ -248,7 +248,7 @@ app.get("/entries/:email", async (req: Request<{ email: string }>, res: Response
     const result = await pool.query(
       `SELECT e.* FROM diary_entries e
        JOIN users u ON e.user_id = u.id
-       WHERE u.login = $1 ORDER BY e.date DESC`,
+       WHERE u.login = $1 ORDER BY e.updated_at DESC`,
       [email]
     );
     res.json(result.rows);
