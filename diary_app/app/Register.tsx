@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { View, Platform } from "react-native";
 import { TextInput } from "react-native-paper";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { router } from "expo-router";
 import auth from "../config/firebase";
@@ -66,6 +67,7 @@ const Register = () => {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom", "left", "right"]}>
     <View style={{ width: "100%", height: "100%", flexDirection: "column",
       alignItems: "center", justifyContent: "center" }}>
       <View style={{ width: "100%", padding: 10 }}>
@@ -173,6 +175,7 @@ const Register = () => {
         />
       </View>
     </View>
+    </SafeAreaView>
   );
 };
 

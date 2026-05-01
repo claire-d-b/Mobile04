@@ -5,6 +5,7 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import * as WebBrowser from "expo-web-browser";
 import auth from "../config/firebase";
 import { AuthProvider } from "@/context/AuthContext";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -37,12 +38,14 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
-        <Stack.Screen name="signin" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="home" />
-      </Stack>
+      <SafeAreaProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="signin" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="home" />
+        </Stack>
+      </SafeAreaProvider>
     </AuthProvider>
   );
 }

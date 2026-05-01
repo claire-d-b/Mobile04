@@ -4,6 +4,7 @@ import { View, Platform } from "react-native";
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 import { useAuthContext } from "../context/AuthContext"
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Modal, Portal, Text, Button, PaperProvider } from 'react-native-paper';
 import CTextInput from "./CTextInput";
 import CIconButton from "./CIconButton";
@@ -11,7 +12,8 @@ import CRating from './CRating'
 import CChip from "./CChip";
 import CModal from "./CModal";
 import CAvatar from "./CAvatar"
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+
+const nbOfEntriesPerPage = 6
 
 const emotions = [
   'emoticon',
@@ -74,6 +76,10 @@ const Home = () => {
     return firebaseEmail ?? null;
   };
 
+  const formatDate = (timestamp: string) => {
+    return new Date(timestamp).toISOString().split("T")[0]; // "2026-05-01"
+  };
+
   const fetchEntries = async (pageNumber = 0) => {
     const email = getEmail();
     console.log("📡 fetchEntries email:", email);
@@ -94,7 +100,7 @@ const Home = () => {
       }
       setEntries(data ?? []); // ← fallback si backend retourne encore un tableau brut
       // setPage(page ?? pageNumber);
-      setTotalPages(Math.ceil(data.length / 10));
+      setTotalPages(Math.ceil(data.length / nbOfEntriesPerPage));
 
       console.log("✅ Entries fetched:", data.entries.length);
 
@@ -142,6 +148,23 @@ const Home = () => {
     }
   };
 
+  const deleteEntry = async (id: number) => {
+    try {
+      const res = await fetch(`${backendUrl}/entries/${id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        console.error("❌ Failed to delete entry:", data.error);
+        return;
+      }
+      console.log("✅ Entry deleted:", data.entry);
+      await fetchEntries(page); // ← recharge la page courante
+    } catch (err) {
+      console.error("❌ Error deleting entry:", err);
+    }
+  };
+
   const loadMore = async () => {
     if (page < totalPages) {
     const nextPage = page+1;   
@@ -164,12 +187,15 @@ const Home = () => {
   }, [email]);
 
   return (
+    <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom", "left", "right"]}>
     <PaperProvider>
       <View style={{ display: "flex", width: "100%", height: "100%", flexDirection: "column",
-        alignItems: "center", justifyContent: "center" }}>
-          <View style={{ display: "flex", flexDirection: "column"}}>
-          <CAvatar size={80} icon="account" color="white" style={{ backgroundColor: "#534DB3" }} />
+        alignItems: "center", justifyContent: "space-around" }}>
+          <View style={{ width: "100%", display: "flex", flexDirection: "row", justifyContent: "center", alignItems: "center" }}>
+            <CAvatar size={80} icon="account" color="white" style={{ backgroundColor: "#534DB3" }} />
+            <Text style={{ padding: 20, color: "#353172" }}>{email}</Text>
           </View>
+        <Text style={{ color: "#353172", padding: 40 }}>Add a new entry to your diary by clicking Add entry. You can click on a specific entry in the below list to get details.</Text>
         <CModal visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
           <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <CTextInput
@@ -227,21 +253,26 @@ const Home = () => {
               </View>
             </View>
           </CModal>
-          <Text style={{ color: "black" }}>This is the homepage</Text>
-          { entries && entries.length > 0 && entries.map((e, i) => {
-            return <View key={`entry_${i}`} style={{ display: "flex", flexDirection: "row", marginHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
-              <CChip onPress={() => {}} label="" mode="outlined" textStyle={{}} style={{}} buttonColor="#534DB3" icon="" disabled={false}>{e.title}</CChip>
-              <CIconButton icon={emotions[(e.feeling ?? 1) - 1]} iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
-              <Text numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{e.content}</Text>
-              <CIconButton icon="close" iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
-            </View>
-          })}
+          <View style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+            { entries && entries.length > 0 && entries.map((e, i) => {
+              return <View key={`entry_${i}`} style={{ display: "flex", flexDirection: "row", marginHorizontal: 20, marginVertical: 2.5, padding: 5, justifyContent: "center", alignItems: "center", backgroundColor: "#BBB0D1", borderRadius: 10 }}>
+                <View style={{ backgroundColor: "white", borderRadius: 10, margin: 5 }}>
+                  <CChip theme={{ colors: { surfaceDisabled: "#BBB0D1", onSurfaceDisabled: "#534DB3" } as any}} onPress={() => {}} label="" mode="outlined" textStyle={{ color: "#534DB3" }} style={{}} buttonColor="#534DB3" icon="" disabled={true}>{formatDate(e.created_at)}</CChip>
+                </View>
+                <CIconButton icon={emotions[(e.feeling ?? 1) - 1]} iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
+                {/* <Text numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1, color: "#353172"  }}>{e.content}</Text> */}
+                <Text style={{ flex: 1, color: "#353172"  }}>{e.title}</Text>
+                <CIconButton icon="close" iconColor="#534DB3" containerColor="" size={20} onPress={() => {deleteEntry(e.id)}} />
+              </View>
+            })}
+          </View>
           <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
             <CIconButton icon="chevron-left" iconColor="#534DB3" containerColor="" size={25} onPress={loadLess} />
             <CIconButton icon="chevron-right" iconColor="#534DB3" containerColor="" size={25} onPress={loadMore} />
           </View>
         </View>
         </PaperProvider>
+        </SafeAreaView>
   );
 };
 
