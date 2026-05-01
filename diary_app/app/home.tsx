@@ -61,11 +61,11 @@ const Home = () => {
 
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  // const [hasNext, setHasNext] = useState(false);
-  // const [hasPrev, setHasPrev] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
 
   const [entries, setEntries] = useState<Entry[]>([]);
+
+  const [message, setMessage] = useState("")
+  const [type, setType] = useState("")
 
   const auth = getAuth();
   const email = auth.currentUser?.email ?? localLogin;
@@ -110,7 +110,12 @@ const Home = () => {
   };
 
   const handleSubmit = async () => {
-    if (!title || !content) return;
+    setMessage("")
+    if (!title || !content) {
+      setMessage("Please provide a title and content.")
+      setType("error")
+      return;
+    }
     console.log("📡 auth.currentUser:", auth.currentUser?.email);
     console.log("📡 email utilisé:", email);    
 
@@ -135,13 +140,15 @@ const Home = () => {
       }
 
       console.log("✅ Entry created:", data);
+      setMessage("Entry successfully created!")
+      setType("success")
 
       // Reset
       setTitle("");
       setContent("");
       setFeeling(1);
       await fetchEntries(0);
-      hideModal();
+      // hideModal();
 
     } catch (err) {
       console.error("❌ Error creating entry:", err);
@@ -196,7 +203,7 @@ const Home = () => {
             <Text style={{ padding: 20, color: "#353172" }}>{email}</Text>
           </View>
         <Text style={{ color: "#353172", padding: 40 }}>Add a new entry to your diary by clicking Add entry. You can click on a specific entry in the below list to get details.</Text>
-        <CModal visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
+        <CModal type={type} message={message} visible={visible} hideModal={hideModal} showModal={showModal} style={{ width: "100%", height: "100%" }}>
           <View style={{ width: "100%", alignSelf: "flex-start" }}>
             <CTextInput
               secureTextEntry={false}
