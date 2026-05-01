@@ -242,15 +242,24 @@ app.post("/entries", async (req: Request<{}, {}, DiaryEntryBody>, res: Response)
 });
 
 // GET ENTRIES FOR USER
-app.get("/entries/:email", async (req: Request<{ email: string }>, res: Response) => {
+app.get("/entries/:email", async (req, res) => {
   const { email } = req.params;
+
+  // optional: page comes from query params
+  const page = Number(req.query.page ?? 0);
+  const limit = 10;
+  const offset = page * limit;
+
   try {
     const result = await pool.query(
       `SELECT e.* FROM diary_entries e
        JOIN users u ON e.user_id = u.id
-       WHERE u.login = $1 ORDER BY e.updated_at DESC`,
-      [email]
+       WHERE u.login = $1
+       ORDER BY e.updated_at DESC
+       LIMIT $2 OFFSET $3`,
+      [email, limit, offset]
     );
+
     res.json(result.rows);
   } catch (err) {
     console.error(err);

@@ -34,6 +34,15 @@ interface Entry {
   created_at: string;
 }
 
+interface PaginatedResponse {
+  entries: Entry[];
+  page: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 interface Props {
   setEntries: []
 }
@@ -48,36 +57,51 @@ const Home = () => {
   const showModal = () => setVisible(true);
   const hideModal = () => setVisible(false);
 
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  // const [hasNext, setHasNext] = useState(false);
+  // const [hasPrev, setHasPrev] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const [entries, setEntries] = useState<Entry[]>([]);
+
   const auth = getAuth();
   const email = auth.currentUser?.email ?? localLogin;
   console.log(auth.currentUser)
-  const [entries, setEntries] = useState<Entry[]>([]);
 
   const getEmail = () => {
     const firebaseEmail = getAuth().currentUser?.email;
     return firebaseEmail ?? null;
   };
 
-  const fetchEntries = async () => {
-      const email = getEmail();
-      console.log("📡 fetchEntries email:", email);
-      if (!email) return;
+  const fetchEntries = async (pageNumber = 0) => {
+    const email = getEmail();
+    console.log("📡 fetchEntries email:", email);
+    console.log(pageNumber)
+    if (!email) return;
 
-      try {
-        const res = await fetch(`${backendUrl}/entries/${encodeURIComponent(email)}`);
-        const data = await res.json();
+    try {
+      const res = await fetch(
+        `${backendUrl}/entries/${encodeURIComponent(email)}?page=${pageNumber}`
+      );
 
-        if (!res.ok) {
-          console.error("❌ Failed to fetch entries:", data.error);
-          return;
-        }
+      const data = await res.json();
+      console.log("data:", data)
 
-        console.log("✅ Entries fetched:", data.length);
-        setEntries(data);
-      } catch (err) {
-        console.error("❌ Error fetching entries:", err);
+      if (!res.ok) {
+        console.error("❌ Failed to fetch entries:", data.error);
+        return;
       }
-    };
+      setEntries(data ?? []); // ← fallback si backend retourne encore un tableau brut
+      // setPage(page ?? pageNumber);
+      setTotalPages(Math.ceil(data.length / 10));
+
+      console.log("✅ Entries fetched:", data.entries.length);
+
+    } catch (err) {
+      console.error("❌ Error fetching entries:", err);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!title || !content) return;
@@ -110,7 +134,7 @@ const Home = () => {
       setTitle("");
       setContent("");
       setFeeling(1);
-      await fetchEntries();
+      await fetchEntries(0);
       hideModal();
 
     } catch (err) {
@@ -118,8 +142,25 @@ const Home = () => {
     }
   };
 
+  const loadMore = async () => {
+    if (page < totalPages) {
+    const nextPage = page+1;   
+    await fetchEntries(nextPage);
+    setPage(nextPage);
+    }
+  };
+
+  const loadLess = async () => {
+    if (page > 0) {
+    const nextPage = page-1;
+    await fetchEntries(nextPage);
+    setPage(nextPage);
+    }
+  };
+
   useEffect(() => {
-    fetchEntries();
+    fetchEntries(page);
+    setPage(0);
   }, [email]);
 
   return (
@@ -191,10 +232,14 @@ const Home = () => {
             return <View key={`entry_${i}`} style={{ display: "flex", flexDirection: "row", marginHorizontal: 20, justifyContent: "center", alignItems: "center" }}>
               <CChip onPress={() => {}} label="" mode="outlined" textStyle={{}} style={{}} buttonColor="#534DB3" icon="" disabled={false}>{e.title}</CChip>
               <CIconButton icon={emotions[(e.feeling ?? 1) - 1]} iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
-              <CIconButton icon="arrow" iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
               <Text numberOfLines={1} ellipsizeMode="tail" style={{ flex: 1 }}>{e.content}</Text>
+              <CIconButton icon="close" iconColor="#534DB3" containerColor="" size={20} onPress={() => {}} />
             </View>
           })}
+          <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-around", alignItems: "center" }}>
+            <CIconButton icon="chevron-left" iconColor="#534DB3" containerColor="" size={25} onPress={loadLess} />
+            <CIconButton icon="chevron-right" iconColor="#534DB3" containerColor="" size={25} onPress={loadMore} />
+          </View>
         </View>
         </PaperProvider>
   );
